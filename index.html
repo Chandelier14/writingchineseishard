@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chinese Character Practice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .level-selector {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .level-btn {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .character-info {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 24px;
+        }
+
+        #drawing-canvas {
+            border: 2px solid #333;
+            background-color: white;
+            display: block;
+            margin: 0 auto;
+            touch-action: none;
+        }
+
+        .controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background-color: #008CBA;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+
+        .incorrect-btn {
+            background-color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="level-selector">
+        <button class="level-btn" data-level="hsk1">HSK 1</button>
+        <button class="level-btn" data-level="hsk2">HSK 2</button>
+        <button class="level-btn" data-level="hsk3">HSK 3</button>
+    </div>
+
+    <div class="character-info">
+        <div id="pinyin"></div>
+        <div id="meaning"></div>
+    </div>
+
+    <canvas id="drawing-canvas" width="300" height="300"></canvas>
+
+    <div class="controls">
+        <button class="control-btn" id="clear-btn">Clear</button>
+        <button class="control-btn incorrect-btn" id="incorrect-btn">I Got It Wrong</button>
+        <button class="control-btn" id="check-btn">Show Correct</button>
+        <button class="control-btn" id="next-btn">Next Character</button>
+    </div>
+
+    <script>
+        let wordsData = {};
+        let currentLevel = [];
+        let currentIndex = 0;
+        let incorrectWords = [];
+        const canvas = document.getElementById('drawing-canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        // Load words data from JSON
+        fetch('words.json')
+            .then(response => response.json())
+            .then(data => {
+                wordsData = data;
+                startLevel('hsk1');
+            })
+            .catch(error => console.error('Error loading words:', error));
+
+        // Canvas setup
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = '#000';
+
+        // Event listeners
+        document.querySelectorAll('.level-btn').forEach(btn => {
+            btn.addEventListener('click', () => startLevel(btn.dataset.level));
+        });
+
+        document.getElementById('clear-btn').addEventListener('click', clearCanvas);
+        document.getElementById('check-btn').addEventListener('click', showCorrect);
+        document.getElementById('next-btn').addEventListener('click', nextCharacter);
+        document.getElementById('incorrect-btn').addEventListener('click', markIncorrect);
+
+        // Drawing functionality
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        function startLevel(level) {
+            if (!wordsData[level]) {
+                console.error('Level not found in words.json');
+                return;
+            }
+            currentLevel = wordsData[level];
+            currentIndex = 0;
+            incorrectWords = [];
+            loadCharacter();
+        }
+
+        function loadCharacter() {
+            const currentChar = currentLevel[currentIndex];
+            document.getElementById('pinyin').textContent = currentChar.pinyin;
+            document.getElementById('meaning').textContent = currentChar.meaning;
+            clearCanvas();
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            [lastX, lastY] = [e.offsetX, e.offsetY];
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function showCorrect() {
+            const currentChar = currentLevel[currentIndex];
+            alert(`Correct character: ${currentChar.character}`);
+        }
+
+        function markIncorrect() {
+            incorrectWords.push(currentLevel[currentIndex]);
+        }
+
+        function nextCharacter() {
+            currentIndex = (currentIndex + 1) % currentLevel.length;
+            loadCharacter();
+        }
+    </script>
+</body>
+</html>
