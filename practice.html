@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <!-- Mobile-friendly viewport -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chinese Character Practice</title>
+  <!-- Google reCAPTCHA v2 API -->
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+  <style>
+    :root {
+      --bg-color: #1a1a1a;
+      --text-color: #e0e0e0;
+      --accent-color: #4CAF50;
+      --button-bg: #333;
+      --border-color: #444;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    header {
+      background-color: var(--button-bg);
+      padding: 10px;
+      margin-bottom: 20px;
+    }
+    header nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header nav ul {
+      list-style: none;
+      display: flex;
+      gap: 20px;
+      padding: 0;
+      margin: 0;
+    }
+    header nav ul li a {
+      color: var(--text-color);
+      text-decoration: none;
+      font-size: 18px;
+      padding: 8px 12px;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+    }
+    header nav ul li a:hover {
+      background-color: var(--accent-color);
+    }
+    .level-selector {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    #settings-btn {
+      width: 30px;
+      height: 30px;
+      font-size: 18px;
+      margin-right: 10px;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+    .level-btn {
+      padding: 12px 24px;
+      margin: 8px;
+      cursor: pointer;
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    .level-btn:hover {
+      background-color: var(--accent-color);
+      transform: translateY(-2px);
+    }
+    .character-info {
+      font-size: 24px;
+      padding: 20px;
+      background-color: var(--button-bg);
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #hanzi-container {
+      width: 300px;
+      height: 300px;
+      margin: 0 auto;
+      position: relative;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      background-color: #2a2a2a;
+    }
+    #hanzi-target, #free-canvas {
+      width: 100%;
+      height: 100%;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      padding: 0 20px;
+    }
+    .control-btn {
+      padding: 12px 24px;
+      margin: 8px;
+      cursor: pointer;
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    .control-btn:hover {
+      background-color: var(--accent-color);
+      transform: translateY(-2px);
+    }
+    .correct-character {
+      font-size: 48px;
+      margin-left: 20px;
+    }
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1001;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+    }
+    .modal-content {
+      background-color: var(--button-bg);
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+      width: 90%;
+      max-width: 500px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .modal-content h2 {
+      margin-top: 0;
+    }
+    .modal-content label {
+      display: block;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .modal-content input[type="checkbox"] {
+      margin-right: 8px;
+    }
+    .modal-content input[type="text"] {
+      padding: 8px;
+      width: 100%;
+      margin: 10px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    .modal-content button {
+      padding: 10px 20px;
+      background-color: var(--accent-color);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .modal-content button:hover {
+      background-color: #3aa33d;
+    }
+    .close {
+      color: var(--text-color);
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    /* Sign-in Button Style */
+    #auth-btn {
+      padding: 8px 16px;
+      background-color: var(--accent-color);
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #auth-btn:hover {
+      background-color: #3aa33d;
+    }
+  </style>
+  <!-- Hanzi Writer Library -->
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@2.0.2/dist/hanzi-writer.min.js"></script>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <!-- Navigation Menu -->
+  <header>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="payment.html">Donate</a></li>
+        <li><a href="vocabulary.html">Vocabulary</a></li>
+        <li><a href="myaccount.html">My Account</a></li>
+      </ul>
+      <div id="auth-container">
+        <a href="#" id="auth-btn">Sign In</a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Level Selector with Settings, Custom Set and Public Search -->
+  <div class="level-selector">
+      <button id="settings-btn">⚙</button>
+      <button class="level-btn" data-level="hsk1">HSK 1</button>
+      <button class="level-btn" data-level="hsk2">HSK 2</button>
+      <button class="level-btn" data-level="hsk3">HSK 3</button>
+      <button class="level-btn" id="custom-set-btn">Custom Set</button>
+      <button class="level-btn" id="search-public-btn">Search Public Lists</button>
+  </div>
+
+  <!-- Character Info and Drawing Area -->
+  <div class="character-info">
+      <div>
+          <div id="pinyin"></div>
+          <div id="meaning"></div>
+      </div>
+      <div id="correct-character" class="correct-character"></div>
+  </div>
+
+  <div id="hanzi-container">
+      <div id="hanzi-target"></div>
+      <canvas id="free-canvas"></canvas>
+  </div>
+
+  <div class="controls">
+      <button class="control-btn" id="clear-btn">Clear</button>
+      <button class="control-btn" id="incorrect-btn">I Got It Wrong</button>
+      <button class="control-btn" id="check-btn">Show Outline</button>
+      <button class="control-btn" id="next-btn">Next Character</button>
+      <button class="control-btn" id="show-answer-btn">Show Answer</button>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeSettingsModal">&times;</span>
+      <h2>Settings</h2>
+      <label>
+        <input type="checkbox" id="enableHanziWriter" checked>
+        Enable Hanzi Writer
+      </label>
+      <label id="backwardsLabel">
+        <input type="checkbox" id="acceptBackwardsStrokes">
+        Accept Backwards Strokes
+      </label>
+      <label id="highlightLabel">
+        <input type="checkbox" id="highlightOnComplete" checked>
+        Highlight on Complete
+      </label>
+      <label>
+        <input type="checkbox" id="playSound">
+        Play Sound on Correct Answer
+      </label>
+      <button id="saveSettingsBtn">Save Settings</button>
+    </div>
+  </div>
+
+  <!-- Username Modal with reCAPTCHA -->
+  <div id="usernameModal" class="modal">
+    <div class="modal-content">
+      <h2>Choose a Username</h2>
+      <input type="text" id="usernameInput" placeholder="Enter username">
+      <div class="g-recaptcha" data-sitekey="YOUR_RECAPTCHA_SITE_KEY"></div>
+      <button id="saveUsernameBtn">Save Username</button>
+    </div>
+  </div>
+
+  <!-- Custom Set Modal -->
+  <div id="customSetModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeCustomModal">&times;</span>
+      <h2>Select Custom Vocabulary Set</h2>
+      <div id="customSetList">
+        <!-- Custom vocabulary sets will be listed here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Public List Search Modal -->
+  <div id="publicSearchModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closePublicModal">&times;</span>
+      <h2>Search Public Vocabulary Lists</h2>
+      <input type="text" id="publicSearchInput" placeholder="Search by list name">
+      <div id="publicListResults">
+        <!-- Public vocabulary lists will be displayed here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Sound Audio -->
+  <audio id="successSound" src="success.mp3"></audio>
+
+  <script>
+    // Global settings object with defaults
+    let settings = {
+      useHanziWriter: true,
+      acceptBackwardsStrokes: false,
+      highlightOnComplete: true,
+      playSound: false
+    };
+
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDSzCCCrQ0hZ3gSIGFTKqr6Mclitd963_Y",
+      authDomain: "writechinese-b2a5a.firebaseapp.com",
+      projectId: "writechinese-b2a5a",
+      storageBucket: "writechinese-b2a5a",
+      messagingSenderId: "185489191290",
+      appId: "1:185489191290:web:65f61f126c3bf592f9e6c3",
+      measurementId: "G-P4R8LNZ51H"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let wordsData = {};
+    let currentLevel = [];
+    let writer = null;
+    let freeCanvasCtx = null;
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+    let userIncorrectWords = {};
+    let currentCharacter = null;
+
+    // Load words.json for HSK levels
+    fetch('words.json')
+      .then(response => response.json())
+      .then(data => {
+          wordsData = data;
+          startLevel('hsk1');
+      })
+      .catch(error => console.error('Error loading words:', error));
+
+    const freeCanvas = document.getElementById('free-canvas');
+    freeCanvas.width = 300;
+    freeCanvas.height = 300;
+    freeCanvasCtx = freeCanvas.getContext('2d');
+    freeCanvasCtx.lineWidth = 5;
+    freeCanvasCtx.lineCap = 'round';
+    freeCanvasCtx.strokeStyle = '#fff';
+
+    // Firebase auth state & load user settings
+    auth.onAuthStateChanged(user => {
+      const authBtn = document.getElementById('auth-btn');
+      if (user) {
+        authBtn.textContent = "Sign Out";
+        const userDocRef = db.collection("users").doc(user.uid);
+        userDocRef.get().then(doc => {
+          if (doc.exists) {
+            if (doc.data().settings) {
+              settings = Object.assign(settings, doc.data().settings);
+              updateSettingsUI();
+            }
+            if (!doc.data().username) {
+              document.getElementById('usernameModal').style.display = "block";
+            }
+            userIncorrectWords = doc.data().incorrectWords || {};
+          }
+        }).catch(err => console.error("Error fetching user data:", err));
+      } else {
+        authBtn.textContent = "Sign In";
+      }
+    });
+    document.getElementById('auth-btn').addEventListener('click', () => {
+      if (auth.currentUser) {
+        auth.signOut().catch(err => console.error("Sign out error:", err));
+      } else {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        auth.signInWithPopup(provider).catch(err => console.error("Sign in error:", err));
+      }
+    });
+
+    // Level button event listeners
+    document.querySelectorAll('.level-btn[data-level]').forEach(btn => {
+      btn.addEventListener('click', () => startLevel(btn.dataset.level));
+    });
+
+    // Settings modal event listeners
+    document.getElementById('settings-btn').addEventListener('click', () => {
+      document.getElementById('enableHanziWriter').checked = settings.useHanziWriter;
+      document.getElementById('acceptBackwardsStrokes').checked = settings.acceptBackwardsStrokes;
+      document.getElementById('highlightOnComplete').checked = settings.highlightOnComplete;
+      document.getElementById('playSound').checked = settings.playSound;
+      document.getElementById('backwardsLabel').style.display = settings.useHanziWriter ? "block" : "none";
+      document.getElementById('highlightLabel').style.display = settings.useHanziWriter ? "block" : "none";
+      document.getElementById('settingsModal').style.display = "block";
+    });
+    document.getElementById('closeSettingsModal').addEventListener('click', () => {
+      document.getElementById('settingsModal').style.display = "none";
+    });
+    document.getElementById('enableHanziWriter').addEventListener('change', (e) => {
+      document.getElementById('backwardsLabel').style.display = e.target.checked ? "block" : "none";
+      document.getElementById('highlightLabel').style.display = e.target.checked ? "block" : "none";
+    });
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+      settings.useHanziWriter = document.getElementById('enableHanziWriter').checked;
+      settings.acceptBackwardsStrokes = document.getElementById('acceptBackwardsStrokes').checked;
+      settings.highlightOnComplete = document.getElementById('highlightOnComplete').checked;
+      settings.playSound = document.getElementById('playSound').checked;
+      updateControlButtonsVisibility();
+      if (settings.useHanziWriter) {
+        document.getElementById('hanzi-target').style.display = 'block';
+        freeCanvas.style.display = 'none';
+      } else {
+        document.getElementById('hanzi-target').innerHTML = "";
+        document.getElementById('hanzi-target').style.display = 'none';
+        freeCanvas.style.display = 'block';
+      }
+      if (auth.currentUser) {
+        db.collection("users").doc(auth.currentUser.uid).set({ settings: settings }, { merge: true });
+      }
+      document.getElementById('settingsModal').style.display = "none";
+    });
+
+    // Username modal event listener with reCAPTCHA validation
+    document.getElementById('saveUsernameBtn').addEventListener('click', () => {
+      const username = document.getElementById('usernameInput').value.trim();
+      const recaptchaResponse = grecaptcha.getResponse();
+      if (!username) {
+        alert("Please enter a valid username.");
+        return;
+      }
+      if (!recaptchaResponse) {
+        alert("Please complete the CAPTCHA.");
+        return;
+      }
+      if (auth.currentUser) {
+        db.collection("users").doc(auth.currentUser.uid).set({ username: username }, { merge: true })
+          .then(() => {
+            document.getElementById('usernameModal').style.display = "none";
+            grecaptcha.reset();
+          })
+          .catch(err => console.error("Error saving username:", err));
+      }
+    });
+
+    // Canvas and control buttons event listeners
+    document.getElementById('clear-btn').addEventListener('click', clearCanvas);
+    document.getElementById('check-btn').addEventListener('click', showOutline);
+    document.getElementById('next-btn').addEventListener('click', () => {
+      if (settings.playSound) {
+        document.getElementById("successSound").play();
+      }
+      loadCharacter();
+    });
+    document.getElementById('incorrect-btn').addEventListener('click', markIncorrect);
+
+    document.getElementById('show-answer-btn').addEventListener("click", () => {
+      if (currentCharacter) {
+        let answerText = `Word: ${currentCharacter.character}\nPinyin: ${currentCharacter.pinyin}\nMeaning: ${currentCharacter.meaning}`;
+        if (currentCharacter.example) {
+          answerText += `\nExample: ${currentCharacter.example}`;
+        }
+        if (currentCharacter.definitions && currentCharacter.definitions.length > 0) {
+          answerText += `\nAdditional Definitions: ${currentCharacter.definitions.join("; ")}`;
+        }
+        alert(answerText);
+      } else {
+        alert("No word loaded.");
+      }
+    });
+
+    freeCanvas.addEventListener('mousedown', startDrawing);
+    freeCanvas.addEventListener('mousemove', draw);
+    freeCanvas.addEventListener('mouseup', stopDrawing);
+    freeCanvas.addEventListener('mouseout', stopDrawing);
+
+    // Custom Set and Public Search modal logic
+    document.getElementById('custom-set-btn').addEventListener('click', openCustomSetModal);
+    document.getElementById('search-public-btn').addEventListener('click', openPublicSearchModal);
+    document.getElementById('closeCustomModal').addEventListener('click', () => {
+      document.getElementById('customSetModal').style.display = "none";
+    });
+    document.getElementById('closePublicModal').addEventListener('click', () => {
+      document.getElementById('publicSearchModal').style.display = "none";
+    });
+    function openCustomSetModal() {
+      if (!auth.currentUser) {
+        alert("Please sign in to view your custom vocabulary sets.");
+        return;
+      }
+      const userId = auth.currentUser.uid;
+      db.collection("users").doc(userId).collection("vocabularyLists").get()
+        .then(snapshot => {
+          const customSetListDiv = document.getElementById("customSetList");
+          customSetListDiv.innerHTML = "";
+          if (snapshot.empty) {
+            customSetListDiv.innerHTML = "<p>No custom vocabulary sets found.</p>";
+          } else {
+            snapshot.forEach(doc => {
+              const listData = doc.data();
+              const btn = document.createElement("button");
+              btn.textContent = listData.name;
+              btn.style.display = "block";
+              btn.style.margin = "10px 0";
+              btn.addEventListener("click", () => {
+                if (listData.words && Array.isArray(listData.words)) {
+                  currentLevel = listData.words;
+                  loadCharacter();
+                  document.getElementById("customSetModal").style.display = "none";
+                } else {
+                  alert("This vocabulary set has no words.");
+                }
+              });
+              customSetListDiv.appendChild(btn);
+            });
+          }
+          document.getElementById("customSetModal").style.display = "block";
+        })
+        .catch(err => console.error("Error fetching custom vocabulary sets:", err));
+    }
+    function openPublicSearchModal() {
+      document.getElementById("publicSearchModal").style.display = "block";
+      loadPublicVocabularyLists();
+    }
+    // Updated: loadPublicVocabularyLists shows list name, creator's username, and adds View and Play buttons.
+    function loadPublicVocabularyLists() {
+      db.collection("publicVocabularyLists").get()
+        .then(snapshot => {
+          const resultsDiv = document.getElementById("publicListResults");
+          resultsDiv.innerHTML = "";
+          snapshot.forEach(doc => {
+            const listData = doc.data();
+            const container = document.createElement("div");
+            container.style.border = "1px solid var(--border-color)";
+            container.style.padding = "10px";
+            container.style.marginBottom = "10px";
+            // Get creator username or fallback to email
+            const creator = listData.username ? listData.username : listData.userEmail;
+            container.innerHTML = `<strong>${listData.name}</strong> (by ${creator})`;
+            // Create buttons container
+            const btnContainer = document.createElement("div");
+            btnContainer.style.marginTop = "5px";
+            // View button: shows list words in an alert (or modal)
+            const viewBtn = document.createElement("button");
+            viewBtn.textContent = "View";
+            viewBtn.addEventListener("click", () => {
+              if (listData.words && Array.isArray(listData.words)) {
+                let wordsText = listData.words.map(w => `${w.character} - ${w.pinyin} - ${w.meaning}`).join("\n");
+                alert(`Words in ${listData.name}:\n${wordsText}`);
+              } else {
+                alert("This vocabulary set has no words.");
+              }
+            });
+            btnContainer.appendChild(viewBtn);
+            // Play button: loads list into practice mode
+            const playBtn = document.createElement("button");
+            playBtn.textContent = "Play";
+            playBtn.style.marginLeft = "5px";
+            playBtn.addEventListener("click", () => {
+              if (listData.words && Array.isArray(listData.words)) {
+                currentLevel = listData.words;
+                loadCharacter();
+                document.getElementById("publicSearchModal").style.display = "none";
+              } else {
+                alert("This vocabulary set has no words.");
+              }
+            });
+            btnContainer.appendChild(playBtn);
+            container.appendChild(btnContainer);
+            resultsDiv.appendChild(container);
+          });
+        })
+        .catch(err => console.error("Error fetching public vocabulary sets:", err));
+    }
+    document.getElementById("publicSearchInput").addEventListener("input", function() {
+      const query = this.value.toLowerCase();
+      db.collection("publicVocabularyLists").get()
+        .then(snapshot => {
+          const resultsDiv = document.getElementById("publicListResults");
+          resultsDiv.innerHTML = "";
+          snapshot.forEach(doc => {
+            const listData = doc.data();
+            if (listData.name.toLowerCase().includes(query)) {
+              const container = document.createElement("div");
+              container.style.border = "1px solid var(--border-color)";
+              container.style.padding = "10px";
+              container.style.marginBottom = "10px";
+              const creator = listData.username ? listData.username : listData.userEmail;
+              container.innerHTML = `<strong>${listData.name}</strong> (by ${creator})`;
+              const btnContainer = document.createElement("div");
+              btnContainer.style.marginTop = "5px";
+              const viewBtn = document.createElement("button");
+              viewBtn.textContent = "View";
+              viewBtn.addEventListener("click", () => {
+                if (listData.words && Array.isArray(listData.words)) {
+                  let wordsText = listData.words.map(w => `${w.character} - ${w.pinyin} - ${w.meaning}`).join("\n");
+                  alert(`Words in ${listData.name}:\n${wordsText}`);
+                } else {
+                  alert("This vocabulary set has no words.");
+                }
+              });
+              btnContainer.appendChild(viewBtn);
+              const playBtn = document.createElement("button");
+              playBtn.textContent = "Play";
+              playBtn.style.marginLeft = "5px";
+              playBtn.addEventListener("click", () => {
+                if (listData.words && Array.isArray(listData.words)) {
+                  currentLevel = listData.words;
+                  loadCharacter();
+                  document.getElementById("publicSearchModal").style.display = "none";
+                } else {
+                  alert("This vocabulary set has no words.");
+                }
+              });
+              btnContainer.appendChild(playBtn);
+              container.appendChild(btnContainer);
+              resultsDiv.appendChild(container);
+            }
+          });
+        })
+        .catch(err => console.error("Error filtering public vocabulary sets:", err));
+    });
+
+    function updateSettingsUI() {
+      document.getElementById('enableHanziWriter').checked = settings.useHanziWriter;
+      document.getElementById('acceptBackwardsStrokes').checked = settings.acceptBackwardsStrokes;
+      document.getElementById('highlightOnComplete').checked = settings.highlightOnComplete;
+      document.getElementById('playSound').checked = settings.playSound;
+      document.getElementById('backwardsLabel').style.display = settings.useHanziWriter ? "block" : "none";
+      document.getElementById('highlightLabel').style.display = settings.useHanziWriter ? "block" : "none";
+    }
+    function startLevel(level) {
+      if (!wordsData[level]) return;
+      currentLevel = wordsData[level];
+      loadCharacter();
+    }
+    function loadCharacter() {
+      if (writer) {
+        writer = null;
+        document.getElementById('hanzi-target').innerHTML = "";
+      }
+      clearCanvas();
+      if (!currentLevel || currentLevel.length === 0) return;
+      currentCharacter = pickNextCharacter();
+      document.getElementById('pinyin').textContent = currentCharacter.pinyin;
+      document.getElementById('meaning').textContent = currentCharacter.meaning;
+      document.getElementById('correct-character').textContent = '';
+      if (settings.useHanziWriter) {
+        writer = HanziWriter.create('hanzi-target', currentCharacter.character, {
+          width: 300,
+          height: 300,
+          showCharacter: false,
+          showOutline: false,
+          strokeAnimationSpeed: 2,
+          delayBetweenStrokes: 200,
+          radicalColor: '#4CAF50',
+          highlightOnComplete: settings.highlightOnComplete
+        });
+        writer.quiz({ acceptBackwardsStrokes: settings.acceptBackwardsStrokes });
+      }
+    }
+    function pickNextCharacter() {
+      let totalWeight = 0;
+      let weights = [];
+      for (let word of currentLevel) {
+        let weight = 1;
+        if (userIncorrectWords[word.character]) {
+          weight += userIncorrectWords[word.character];
+        }
+        weights.push(weight);
+        totalWeight += weight;
+      }
+      let random = Math.random() * totalWeight;
+      for (let i = 0; i < currentLevel.length; i++) {
+        random -= weights[i];
+        if (random <= 0) {
+          return currentLevel[i];
+        }
+      }
+      return currentLevel[0];
+    }
+    function startDrawing(e) {
+      if (settings.useHanziWriter) return;
+      isDrawing = true;
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    }
+    function draw(e) {
+      if (!isDrawing || settings.useHanziWriter) return;
+      freeCanvasCtx.beginPath();
+      freeCanvasCtx.moveTo(lastX, lastY);
+      freeCanvasCtx.lineTo(e.offsetX, e.offsetY);
+      freeCanvasCtx.stroke();
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    }
+    function stopDrawing() {
+      isDrawing = false;
+    }
+    function clearCanvas() {
+      if (!settings.useHanziWriter) {
+        freeCanvasCtx.clearRect(0, 0, freeCanvas.width, freeCanvas.height);
+      }
+    }
+    function showOutline() {
+      if (settings.useHanziWriter && writer) {
+        writer.showOutline();
+      } else if (currentCharacter) {
+        document.getElementById('correct-character').textContent = currentCharacter.character;
+      }
+    }
+    function markIncorrect() {
+      if (!currentCharacter) return;
+      if (auth.currentUser) {
+        const userDocRef = db.collection("users").doc(auth.currentUser.uid);
+        userDocRef.get().then(doc => {
+          let counts = {};
+          if (doc.exists && doc.data().incorrectWords) {
+            counts = doc.data().incorrectWords;
+          }
+          counts[currentCharacter.character] = (counts[currentCharacter.character] || 0) + 1;
+          userIncorrectWords[currentCharacter.character] = counts[currentCharacter.character];
+          return userDocRef.set({ incorrectWords: counts }, { merge: true });
+        }).catch(err => console.error("Error updating incorrect words:", err));
+      }
+      showOutline();
+    }
+    function updateControlButtonsVisibility() {
+      if (settings.useHanziWriter) {
+        document.getElementById('clear-btn').style.display = "none";
+        document.getElementById('incorrect-btn').style.display = "none";
+      } else {
+        document.getElementById('clear-btn').style.display = "block";
+        document.getElementById('incorrect-btn').style.display = "block";
+      }
+    }
+    function adjustForMobile() {
+      const container = document.getElementById('hanzi-container');
+      const width = Math.min(window.innerWidth * 0.9, 300);
+      container.style.width = width + "px";
+      container.style.height = width + "px";
+      freeCanvas.width = width;
+      freeCanvas.height = width;
+      if (writer && writer.resize) {
+        writer.resize(width, width);
+      }
+    }
+    window.addEventListener('resize', adjustForMobile);
+    adjustForMobile();
+    updateControlButtonsVisibility();
+  </script>
+</body>
+</html>
