@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <!-- Mobile-friendly viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home - Chinese Writing Improvement</title>
+  <title>Chinese Character Practice</title>
+  <!-- Note: Removed reCAPTCHA and Firebase SDKs -->
   <style>
     :root {
       --bg-color: #1a1a1a;
@@ -14,27 +16,30 @@
     }
     body {
       font-family: Arial, sans-serif;
-      background-color: var(--bg-color);
-      color: var(--text-color);
       max-width: 800px;
       margin: 0 auto;
       padding: 20px;
-      text-align: center;
+      background-color: var(--bg-color);
+      color: var(--text-color);
     }
     header {
       background-color: var(--button-bg);
       padding: 10px;
       margin-bottom: 20px;
     }
-    nav ul {
+    header nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    header nav ul {
       list-style: none;
       display: flex;
-      justify-content: center;
       gap: 20px;
       padding: 0;
       margin: 0;
     }
-    nav ul li a {
+    header nav ul li a {
       color: var(--text-color);
       text-decoration: none;
       font-size: 18px;
@@ -42,54 +47,477 @@
       border-radius: 4px;
       transition: background-color 0.3s ease;
     }
-    nav ul li a:hover {
+    header nav ul li a:hover {
       background-color: var(--accent-color);
     }
-    .hero {
-      margin-top: 40px;
-    }
-    .hero h1 {
-      font-size: 36px;
+    .level-selector {
+      text-align: center;
       margin-bottom: 20px;
     }
-    .hero p {
-      font-size: 20px;
-      line-height: 1.5;
-      margin-bottom: 30px;
+    #settings-btn {
+      width: 30px;
+      height: 30px;
+      font-size: 18px;
+      margin-right: 10px;
+      vertical-align: middle;
+      cursor: pointer;
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
     }
-    .cta-btn {
+    .level-btn {
       padding: 12px 24px;
+      margin: 8px;
+      cursor: pointer;
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    .level-btn:hover {
+      background-color: var(--accent-color);
+      transform: translateY(-2px);
+    }
+    .character-info {
+      font-size: 24px;
+      padding: 20px;
+      background-color: var(--button-bg);
+      border-radius: 10px;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #hanzi-container {
+      width: 300px;
+      height: 300px;
+      margin: 0 auto;
+      position: relative;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      background-color: #2a2a2a;
+    }
+    #hanzi-target, #free-canvas {
+      width: 100%;
+      height: 100%;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      padding: 0 20px;
+    }
+    .control-btn {
+      padding: 12px 24px;
+      margin: 8px;
+      cursor: pointer;
+      background-color: var(--button-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+    }
+    .control-btn:hover {
+      background-color: var(--accent-color);
+      transform: translateY(-2px);
+    }
+    .correct-character {
+      font-size: 48px;
+      margin-left: 20px;
+    }
+    /* Modal Styles for Settings */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1001;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.6);
+    }
+    .modal-content {
+      background-color: var(--button-bg);
+      margin: 10% auto;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+      width: 90%;
+      max-width: 500px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+    .modal-content h2 {
+      margin-top: 0;
+    }
+    .modal-content label {
+      display: block;
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .modal-content input[type="checkbox"] {
+      margin-right: 8px;
+    }
+    .modal-content input[type="text"] {
+      padding: 8px;
+      width: 100%;
+      margin: 10px 0;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+    }
+    .modal-content button {
+      padding: 10px 20px;
       background-color: var(--accent-color);
       color: #fff;
       border: none;
       border-radius: 4px;
-      text-decoration: none;
-      font-size: 18px;
-      transition: background-color 0.3s ease;
+      cursor: pointer;
+      margin-top: 10px;
     }
-    .cta-btn:hover {
+    .modal-content button:hover {
       background-color: #3aa33d;
     }
+    .close {
+      color: var(--text-color);
+      float: right;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
   </style>
+  <!-- Hanzi Writer Library -->
+  <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@2.0.2/dist/hanzi-writer.min.js"></script>
 </head>
 <body>
+  <!-- Navigation Menu -->
   <header>
     <nav>
       <ul>
-         <li><a href="index.html">Home</a></li>
-         <li><a href="practice.html">Practice</a></li>
-         <li><a href="vocabulary.html">Vocabulary</a></li>
-         <li><a href="myaccount.html">My Account</a></li>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="practice.html">Practice</a></li>
       </ul>
     </nav>
   </header>
-  <div class="hero">
-    <h1>Welcome to Chinese Writing Improvement</h1>
-    <p>
-      Enhance your Chinese writing skills with interactive practice and personalized feedback.
-      Explore vocabulary lists, track your progress, and boost your proficiency.
-    </p>
-    <a href="practice.html" class="cta-btn">Start Practicing</a>
+
+  <!-- Level Selector with Settings -->
+  <div class="level-selector">
+      <button id="settings-btn">⚙</button>
+      <button class="level-btn" data-level="hsk1">HSK 1</button>
+      <button class="level-btn" data-level="hsk2">HSK 2</button>
+      <button class="level-btn" data-level="hsk3">HSK 3</button>
   </div>
+
+  <!-- Character Info and Drawing Area -->
+  <div class="character-info">
+      <div>
+          <div id="pinyin"></div>
+          <div id="meaning"></div>
+      </div>
+      <div id="correct-character" class="correct-character"></div>
+  </div>
+
+  <div id="hanzi-container">
+      <div id="hanzi-target"></div>
+      <canvas id="free-canvas"></canvas>
+  </div>
+
+  <div class="controls">
+      <button class="control-btn" id="clear-btn">Clear</button>
+      <button class="control-btn" id="incorrect-btn">I Got It Wrong</button>
+      <button class="control-btn" id="check-btn">Show Outline</button>
+      <button class="control-btn" id="next-btn">Next Character</button>
+      <button class="control-btn" id="show-answer-btn">Show Answer</button>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeSettingsModal">&times;</span>
+      <h2>Settings</h2>
+      <label>
+        <input type="checkbox" id="enableHanziWriter" checked>
+        Enable Hanzi Writer
+      </label>
+      <label id="backwardsLabel">
+        <input type="checkbox" id="acceptBackwardsStrokes">
+        Accept Backwards Strokes
+      </label>
+      <label id="highlightLabel">
+        <input type="checkbox" id="highlightOnComplete" checked>
+        Highlight on Complete
+      </label>
+      <label>
+        <input type="checkbox" id="playSound">
+        Play Sound on Correct Answer
+      </label>
+      <button id="saveSettingsBtn">Save Settings</button>
+    </div>
+  </div>
+
+  <!-- Success Sound Audio -->
+  <audio id="successSound" src="success.mp3"></audio>
+
+  <script>
+    // Global settings object with defaults
+    let settings = {
+      useHanziWriter: true,
+      acceptBackwardsStrokes: false,
+      highlightOnComplete: true,
+      playSound: false
+    };
+
+    // Global variables for word management
+    let wordsData = {};
+    let currentLevel = [];
+    let currentWord = null;
+    let currentCharIndex = 0;
+    let writer = null;
+    let freeCanvasCtx = null;
+    let isDrawing = false;
+    // We'll keep an empty incorrect words tracker (no backend)
+    let userIncorrectWords = {};
+
+    // Load words.json for HSK levels
+    fetch('words.json')
+      .then(response => response.json())
+      .then(data => {
+          wordsData = data;
+          startLevel('hsk1');
+      })
+      .catch(error => console.error('Error loading words:', error));
+
+    const freeCanvas = document.getElementById('free-canvas');
+    freeCanvas.width = 300;
+    freeCanvas.height = 300;
+    freeCanvasCtx = freeCanvas.getContext('2d');
+    freeCanvasCtx.lineWidth = 5;
+    freeCanvasCtx.lineCap = 'round';
+    freeCanvasCtx.strokeStyle = '#fff';
+
+    // Level button event listeners
+    document.querySelectorAll('.level-btn[data-level]').forEach(btn => {
+      btn.addEventListener('click', () => startLevel(btn.dataset.level));
+    });
+
+    // Settings modal event listeners
+    document.getElementById('settings-btn').addEventListener('click', () => {
+      document.getElementById('enableHanziWriter').checked = settings.useHanziWriter;
+      document.getElementById('acceptBackwardsStrokes').checked = settings.acceptBackwardsStrokes;
+      document.getElementById('highlightOnComplete').checked = settings.highlightOnComplete;
+      document.getElementById('playSound').checked = settings.playSound;
+      document.getElementById('backwardsLabel').style.display = settings.useHanziWriter ? "block" : "none";
+      document.getElementById('highlightLabel').style.display = settings.useHanziWriter ? "block" : "none";
+      document.getElementById('settingsModal').style.display = "block";
+    });
+    document.getElementById('closeSettingsModal').addEventListener('click', () => {
+      document.getElementById('settingsModal').style.display = "none";
+    });
+    document.getElementById('enableHanziWriter').addEventListener('change', (e) => {
+      document.getElementById('backwardsLabel').style.display = e.target.checked ? "block" : "none";
+      document.getElementById('highlightLabel').style.display = e.target.checked ? "block" : "none";
+    });
+    document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+      settings.useHanziWriter = document.getElementById('enableHanziWriter').checked;
+      settings.acceptBackwardsStrokes = document.getElementById('acceptBackwardsStrokes').checked;
+      settings.highlightOnComplete = document.getElementById('highlightOnComplete').checked;
+      settings.playSound = document.getElementById('playSound').checked;
+      updateControlButtonsVisibility();
+      if (settings.useHanziWriter) {
+        document.getElementById('hanzi-target').style.display = 'block';
+        freeCanvas.style.display = 'none';
+      } else {
+        document.getElementById('hanzi-target').innerHTML = "";
+        document.getElementById('hanzi-target').style.display = 'none';
+        freeCanvas.style.display = 'block';
+      }
+      document.getElementById('settingsModal').style.display = "none";
+    });
+
+    function updateSettingsUI() {
+      document.getElementById('enableHanziWriter').checked = settings.useHanziWriter;
+      document.getElementById('acceptBackwardsStrokes').checked = settings.acceptBackwardsStrokes;
+      document.getElementById('highlightOnComplete').checked = settings.highlightOnComplete;
+      document.getElementById('playSound').checked = settings.playSound;
+      document.getElementById('backwardsLabel').style.display = settings.useHanziWriter ? "block" : "none";
+      document.getElementById('highlightLabel').style.display = settings.useHanziWriter ? "block" : "none";
+    }
+
+    function startLevel(level) {
+      if (!wordsData[level]) return;
+      currentLevel = wordsData[level];
+      loadNewWord();
+    }
+
+    function loadNewWord() {
+      if (writer) {
+        writer = null;
+        document.getElementById('hanzi-target').innerHTML = "";
+      }
+      clearCanvas();
+      if (!currentLevel || currentLevel.length === 0) return;
+      currentWord = pickNextCharacter();
+      currentCharIndex = 0;
+      document.getElementById('pinyin').textContent = currentWord.pinyin;
+      document.getElementById('meaning').textContent = currentWord.meaning;
+      document.getElementById('correct-character').textContent = '';
+      // For multi-character words, load only the first character initially
+      let charToLoad = currentWord.character;
+      if (currentWord.character.length > 1) {
+        charToLoad = currentWord.character.charAt(0);
+      }
+      if (settings.useHanziWriter) {
+        writer = HanziWriter.create('hanzi-target', charToLoad, {
+          width: 300,
+          height: 300,
+          showCharacter: false,
+          showOutline: false,
+          strokeAnimationSpeed: 2,
+          delayBetweenStrokes: 200,
+          radicalColor: '#4CAF50',
+          highlightOnComplete: settings.highlightOnComplete
+        });
+        writer.quiz({ acceptBackwardsStrokes: settings.acceptBackwardsStrokes });
+      }
+    }
+
+    function loadNextSegment() {
+      // If the current word has multiple characters and there is a next segment, load it.
+      if (currentWord && currentWord.character.length > 1 && currentCharIndex < currentWord.character.length - 1) {
+        currentCharIndex++;
+        writer = null;
+        document.getElementById('hanzi-target').innerHTML = "";
+        let charToLoad = currentWord.character.charAt(currentCharIndex);
+        if (settings.useHanziWriter) {
+          writer = HanziWriter.create('hanzi-target', charToLoad, {
+            width: 300,
+            height: 300,
+            showCharacter: false,
+            showOutline: false,
+            strokeAnimationSpeed: 2,
+            delayBetweenStrokes: 200,
+            radicalColor: '#4CAF50',
+            highlightOnComplete: settings.highlightOnComplete
+          });
+          writer.quiz({ acceptBackwardsStrokes: settings.acceptBackwardsStrokes });
+        }
+      } else {
+        // Otherwise, pick a new word.
+        loadNewWord();
+      }
+    }
+
+    function pickNextCharacter() {
+      let totalWeight = 0;
+      let weights = [];
+      for (let word of currentLevel) {
+        let weight = 1;
+        if (userIncorrectWords[word.character]) {
+          weight += userIncorrectWords[word.character];
+        }
+        weights.push(weight);
+        totalWeight += weight;
+      }
+      let random = Math.random() * totalWeight;
+      for (let i = 0; i < currentLevel.length; i++) {
+        random -= weights[i];
+        if (random <= 0) {
+          return currentLevel[i];
+        }
+      }
+      return currentLevel[0];
+    }
+
+    function clearCanvas() {
+      if (!settings.useHanziWriter) {
+        freeCanvasCtx.clearRect(0, 0, freeCanvas.width, freeCanvas.height);
+      }
+    }
+
+    function showOutline() {
+      if (settings.useHanziWriter && writer) {
+        writer.showOutline();
+      } else if (currentWord) {
+        document.getElementById('correct-character').textContent = currentWord.character.charAt(currentCharIndex);
+      }
+    }
+
+    function markIncorrect() {
+      showOutline();
+    }
+
+    let lastX = 0, lastY = 0;
+    function startDrawing(e) {
+      if (settings.useHanziWriter) return;
+      isDrawing = true;
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    }
+
+    function draw(e) {
+      if (!isDrawing || settings.useHanziWriter) return;
+      freeCanvasCtx.beginPath();
+      freeCanvasCtx.moveTo(lastX, lastY);
+      freeCanvasCtx.lineTo(e.offsetX, e.offsetY);
+      freeCanvasCtx.stroke();
+      [lastX, lastY] = [e.offsetX, e.offsetY];
+    }
+
+    function stopDrawing() {
+      isDrawing = false;
+    }
+
+    function updateControlButtonsVisibility() {
+      if (settings.useHanziWriter) {
+        document.getElementById('clear-btn').style.display = "none";
+        document.getElementById('incorrect-btn').style.display = "none";
+      } else {
+        document.getElementById('clear-btn').style.display = "block";
+        document.getElementById('incorrect-btn').style.display = "block";
+      }
+    }
+
+    function adjustForMobile() {
+      const container = document.getElementById('hanzi-container');
+      const width = Math.min(window.innerWidth * 0.9, 300);
+      container.style.width = width + "px";
+      container.style.height = width + "px";
+      freeCanvas.width = width;
+      freeCanvas.height = width;
+      if (writer && writer.resize) {
+        writer.resize(width, width);
+      }
+    }
+
+    window.addEventListener('resize', adjustForMobile);
+    adjustForMobile();
+    updateControlButtonsVisibility();
+
+    document.getElementById('clear-btn').addEventListener('click', clearCanvas);
+    document.getElementById('check-btn').addEventListener('click', showOutline);
+    document.getElementById('next-btn').addEventListener('click', () => {
+      if (settings.playSound) {
+        document.getElementById("successSound").play();
+      }
+      loadNextSegment();
+    });
+    document.getElementById('incorrect-btn').addEventListener('click', markIncorrect);
+    document.getElementById('show-answer-btn').addEventListener("click", () => {
+      if (currentWord) {
+        let answerText = `Word: ${currentWord.character}\nPinyin: ${currentWord.pinyin}\nMeaning: ${currentWord.meaning}`;
+        alert(answerText);
+      } else {
+        alert("No word loaded.");
+      }
+    });
+
+    freeCanvas.addEventListener('mousedown', startDrawing);
+    freeCanvas.addEventListener('mousemove', draw);
+    freeCanvas.addEventListener('mouseup', stopDrawing);
+    freeCanvas.addEventListener('mouseout', stopDrawing);
+  </script>
 </body>
 </html>
