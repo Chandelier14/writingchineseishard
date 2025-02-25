@@ -66,14 +66,15 @@
     .word .meaning {
       font-size: 18px;
     }
-    .practice-container input {
-      width: 30px;
-      text-align: center;
+    .practice-interface input[type="text"] {
       font-size: 20px;
-      margin-right: 5px;
+      padding: 5px;
+      width: 200px;
+      text-align: center;
     }
-    .practice-container button {
+    .practice-interface button {
       margin-left: 10px;
+      padding: 5px 10px;
     }
   </style>
 </head>
@@ -81,6 +82,7 @@
   <header>
     <nav>
       <ul>
+        <!-- Only include the HSK buttons -->
         <li><a href="#" class="hsk-btn" data-level="hsk1">HSK1</a></li>
         <li><a href="#" class="hsk-btn" data-level="hsk2">HSK2</a></li>
         <li><a href="#" class="hsk-btn" data-level="hsk3">HSK3</a></li>
@@ -89,31 +91,37 @@
       </ul>
     </nav>
   </header>
-  <h1>Practice Chinese Words</h1>
+  <div class="hero">
+    <h1>Welcome to Chinese Writing Improvement</h1>
+    <p>
+      Enhance your Chinese writing skills with interactive practice.
+      Select an HSK level above to load words and then practice by writing them out.
+    </p>
+  </div>
   <div id="words-container">
     <p>Select an HSK level to load words.</p>
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.addEventListener('DOMContentLoaded', function() {
       const buttons = document.querySelectorAll('.hsk-btn');
       const wordsContainer = document.getElementById('words-container');
 
-      buttons.forEach((button) => {
-        button.addEventListener('click', function (event) {
+      buttons.forEach(button => {
+        button.addEventListener('click', function(event) {
           event.preventDefault();
           const level = this.getAttribute('data-level');
 
           fetch('words.json')
-            .then((response) => response.json())
-            .then((data) => {
+            .then(response => response.json())
+            .then(data => {
               if (data[level]) {
                 displayWords(data[level]);
               } else {
                 wordsContainer.innerHTML = '<p>No words available for this level.</p>';
               }
             })
-            .catch((error) => {
+            .catch(error => {
               console.error('Error loading words:', error);
               wordsContainer.innerHTML = '<p>Error loading words.</p>';
             });
@@ -122,11 +130,11 @@
 
       function displayWords(words) {
         wordsContainer.innerHTML = '';
-        words.forEach((word) => {
+        words.forEach(word => {
           const wordDiv = document.createElement('div');
           wordDiv.classList.add('word');
 
-          // Create a container for word info
+          // Display the word details.
           const wordInfoDiv = document.createElement('div');
           wordInfoDiv.innerHTML = `
             <div class="character">${word.character}</div>
@@ -135,14 +143,13 @@
           `;
           wordDiv.appendChild(wordInfoDiv);
 
-          // Add a Practice button
+          // Add a Practice button.
           const practiceButton = document.createElement('button');
           practiceButton.textContent = 'Practice';
           practiceButton.style.marginTop = '5px';
           wordDiv.appendChild(practiceButton);
 
-          practiceButton.addEventListener('click', function () {
-            // Switch to practice mode
+          practiceButton.addEventListener('click', function() {
             switchToPracticeMode(wordDiv, word);
           });
 
@@ -152,43 +159,39 @@
 
       function switchToPracticeMode(container, word) {
         container.innerHTML = '';
-        const practiceContainer = document.createElement('div');
-        practiceContainer.classList.add('practice-container');
+        const practiceInterface = document.createElement('div');
+        practiceInterface.classList.add('practice-interface');
 
-        // Create an input for each character in the word
-        const characters = Array.from(word.character);
-        characters.forEach((char, index) => {
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.maxLength = 1;
-          input.dataset.index = index;
-          practiceContainer.appendChild(input);
-        });
+        // Instruction for the user.
+        const instruction = document.createElement('p');
+        instruction.textContent = 'Type the word:';
+        practiceInterface.appendChild(instruction);
 
-        // Submit button to check the answer
+        // A single input field for the full word.
+        const inputField = document.createElement('input');
+        inputField.type = 'text';
+        practiceInterface.appendChild(inputField);
+
+        // Submit button.
         const submitButton = document.createElement('button');
         submitButton.textContent = 'Submit';
-        practiceContainer.appendChild(submitButton);
+        practiceInterface.appendChild(submitButton);
 
-        // Feedback element
+        // Feedback area.
         const feedback = document.createElement('div');
         feedback.style.marginTop = '5px';
-        practiceContainer.appendChild(feedback);
+        practiceInterface.appendChild(feedback);
 
-        // Cancel button to go back to normal view
+        // Cancel button to revert to the word view.
         const cancelButton = document.createElement('button');
         cancelButton.textContent = 'Cancel';
         cancelButton.style.marginLeft = '10px';
-        practiceContainer.appendChild(cancelButton);
+        practiceInterface.appendChild(cancelButton);
 
-        container.appendChild(practiceContainer);
+        container.appendChild(practiceInterface);
 
-        submitButton.addEventListener('click', function () {
-          const inputs = practiceContainer.querySelectorAll('input');
-          let userInput = '';
-          inputs.forEach((input) => {
-            userInput += input.value;
-          });
+        submitButton.addEventListener('click', function() {
+          const userInput = inputField.value.trim();
           if (userInput === word.character) {
             feedback.textContent = 'Correct!';
             feedback.style.color = 'green';
@@ -198,8 +201,7 @@
           }
         });
 
-        cancelButton.addEventListener('click', function () {
-          // Restore the original word view
+        cancelButton.addEventListener('click', function() {
           restoreWordView(container, word);
         });
       }
@@ -217,7 +219,7 @@
         practiceButton.textContent = 'Practice';
         practiceButton.style.marginTop = '5px';
         container.appendChild(practiceButton);
-        practiceButton.addEventListener('click', function () {
+        practiceButton.addEventListener('click', function() {
           switchToPracticeMode(container, word);
         });
       }
